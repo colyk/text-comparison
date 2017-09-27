@@ -1,11 +1,17 @@
-# Добавить сравнение по википедии
-
+# add the comparison on Wikipedia articles
 import re
-
 
 def get_text(file_name):
     if(len(file_name)<15 and file_name.endswith('.txt')):
-        return open(file_name,'r', encoding = 'utf-8').read()
+        try:
+            file = open(file_name,'r', encoding = 'utf-8')
+            return file.read()
+        except:
+            print(file_name+' does not exist!')
+            exit(0)
+    if (len(file_name)== 0):
+        print('Your text is too short!')
+        exit(0)
     return file_name
 
 
@@ -33,29 +39,43 @@ def check_equal_parts(text,patern):
         if(sentence in patern):
             sum_of_identity+=1
             identity_list.append(sentence)
+    print('Equal parts:  {}({})'.format(sum_of_identity,max(len(text),len(patern))))
 
-    print('Equal parts = ' + str(sum_of_identity))
-    if(sum_of_identity != 0):
-        print('persent of identity = {:.0%}'.format(sum_of_identity/len(text)))
-        print(identity_list)
-    return sum_of_identity
+    if(sum_of_identity == max(len(text),len(patern))):
+        print('This text is fully copied!')
+        exit(0)
 
-# Добавить сравнение похожести всего текста
-def fuzzy_comparison():
+
+def sentence_comparison(split_text,split_patern, precision = 0.7):
+    matched_dict = {}
     minLen = 100
     for i in split_patern: 
+        minLen = 100
         for j in split_text:
-           if(distance(j,i)/max(len(i),len(j))<minLen):
-               text_result = j
-               patern_result = i
-               minLen = distance(j,i)/max(len(i),len(j))
-    print('С точностью {:.0%} "{}" совпал с "{}"'.format(minLen,text_result,patern_result))
+            if(distance(j,i)/max(len(i),len(j))<minLen):
+                text_result = j
+                patern_result = i
+                minLen = distance(j,i)/max(len(i),len(j))
+                if(1-minLen > precision):    
+                    matched_dict[j] = i
+    for i, j in matched_dict.items():
+        print('With a precision more than 70% text: "{}" matched with: "{}"'.format(i,j))
+    if(len(matched_dict)>1):
+        exit(0)
 
 
+def text_similarity(text, patern_text):
+    similarity = distance(text,patern_text)/max(len(text),len(patern_text))
+    print('The similarity of the whole text {:.0%}'.format(1 - similarity))
+    if(similarity < 0.3):
+        print('This text is likely a rip-off!')
+        exit(0)
+
+        
 def main():
-    text_name = input('Print text or filename for analization: ')
-    patern = input('Print patern text or filename for analization: ')
-
+    text_name = input('Write the text or filename for analysis: ')
+    patern = input('Write the text patern text or filename for analysis: ')
+   
     text = get_text(text_name).replace('\n','')
     patern = get_text(patern).replace('\n','')
 
@@ -63,7 +83,9 @@ def main():
     split_patern = [i for i in re.split(r'[.?!]', patern) if i != '']
 
     check_equal_parts(split_text,split_patern)
-    fuzzy_comparison()
+    text_similarity(text, patern)
+    sentence_comparison(split_text,split_patern)
+    print("Your text is likely original!")
     
 
 if __name__ == '__main__':
